@@ -12,6 +12,7 @@ import java.awt.geom.Path2D;
 import javax.swing.border.EmptyBorder;
 import java.util.*;
 
+
 public class WorkflowEditor extends JFrame {
     private String mode = "";
     private DrawingCanvas canvas;
@@ -48,7 +49,33 @@ public class WorkflowEditor extends JFrame {
         labelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                Shape selectedShape = canvas.getSelectedShape();
+                if (selectedShape != null) {
+                    Label currentLabel = selectedShape.getLabel(); // 假設 Shape 有 getLabel() 方法
+                    CustomLabelStyleDialog dialog = new CustomLabelStyleDialog(WorkflowEditor.this, selectedShape, currentLabel);
+                    dialog.setVisible(true);
 
+                    if (!dialog.isCancelled()) {
+                        String labelName = dialog.getLabelName();
+                        String labelShape = dialog.getLabelShape();
+                        Color backgroundColor = dialog.getBackgroundColor();
+                        int fontSize = dialog.getFontSize();
+
+                        Label newLabel = new Label(labelName);
+                        if (labelShape.equals("Rectangle")) {
+                            newLabel.setShape(new RectangleLabelShape()); // 假設有 RectangleLabelShape 類別
+                        } else if (labelShape.equals("Oval")) {
+                            newLabel.setShape(new OvalLabelShape());     // 假設有 OvalLabelShape 類別
+                        }
+                        newLabel.setBackgroundColor(backgroundColor);
+                        newLabel.setFontSize(fontSize);
+
+                        selectedShape.setLabel(newLabel); // 假設 Shape 有 setLabel() 方法
+                        canvas.repaint();
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(WorkflowEditor.this, "請先選擇一個基本物件。", "提示", JOptionPane.WARNING_MESSAGE);
+                }
             }
         });
         JButton groupButton = new JButton("Group");
@@ -274,6 +301,16 @@ public class WorkflowEditor extends JFrame {
             addMouseListener(mouseHandler);
             addMouseMotionListener(mouseHandler);
         }
+
+        public Shape getSelectedShape() {
+            for (Shape shape : shapes) {
+                if (shape.isSelected() && !(shape instanceof CompositeShape)) {
+                    return shape;
+                }
+            }
+            return null;
+        }
+
         private void unselectAllShapes() {
             for (Shape shape : shapes) {
                 shape.setSelected(false);
@@ -466,6 +503,7 @@ public class WorkflowEditor extends JFrame {
         static Color defaultBorderColor = Color.DARK_GRAY;
 
         int x, y, width, height, depth;
+        private Label label;
         private boolean isSelected = false;
         private boolean isDragging = false;
         Set<Point> connectedPorts = new HashSet<>();
@@ -484,6 +522,47 @@ public class WorkflowEditor extends JFrame {
         abstract void draw(Graphics2D g);
 
         abstract Rectangle getBounds();
+
+        public Label getLabel() {
+            return label;
+        }
+
+        public void setLabel(Label label) {
+            this.label = label;
+        }
+
+        protected void drawLabel(Graphics2D g) {
+            if (label != null) {
+                Rectangle shapeBounds = getBounds();
+                Font font = new Font("Arial", Font.PLAIN, label.getFontSize());
+                FontMetrics fm = g.getFontMetrics(font);
+                int textWidth = fm.stringWidth(label.getText());
+                int textHeight = fm.getHeight();
+
+                // 計算標籤的預計寬度和高度 (考慮形狀和文字)
+                int labelWidth = Math.max(textWidth + 10, 30); // 至少 30 寬
+                int labelHeight = Math.max(textHeight + 5, 20); // 至少 20 高
+
+                // 計算標籤的中心點座標
+                int labelCenterX = shapeBounds.x + shapeBounds.width / 2;
+                int labelCenterY = shapeBounds.y + shapeBounds.height / 2;
+
+                // 計算標籤左上角的 X 和 Y 座標，使其中心點與 Shape 的中心點對齊
+                int labelX = labelCenterX - labelWidth / 2;
+                int labelY = labelCenterY - labelHeight / 2;
+
+                // 繪製標籤背景
+                g.setColor(label.getBackgroundColor());
+                label.getShape().draw(g, labelX, labelY, labelWidth, labelHeight);
+
+                // 繪製標籤文字
+                g.setColor(Color.BLACK);
+                g.setFont(font);
+                int textX = labelX + (labelWidth - textWidth) / 2;
+                int textY = labelY + (labelHeight + fm.getAscent()) / 2 - fm.getDescent();
+                g.drawString(label.getText(), textX, textY);
+            }
+        }
 
         protected abstract void updateConnectionPoints();
 
@@ -531,7 +610,7 @@ public class WorkflowEditor extends JFrame {
         }
 
         public void translate(int dx, int dy) {
-            System.out.println("Translate: dx = " + dx + ", dy = " + dy + " for shape at (" + x + ", " + y + ")");
+           // System.out.println("Translate: dx = " + dx + ", dy = " + dy + " for shape at (" + x + ", " + y + ")");
             this.x += dx;
             this.y += dy;
             updateConnectionPoints();
@@ -615,6 +694,9 @@ public class WorkflowEditor extends JFrame {
             g.setColor(borderColor);
             g.drawRect(x, y, width, height);
 
+            // 繪製標籤
+            drawLabel(g);
+
             if (isSelected()){
                 // 繪製連接點
                 drawAllConnectionPoints(g);
@@ -660,6 +742,9 @@ public class WorkflowEditor extends JFrame {
             g.setColor(fillColor);
             g.fillOval(x, y, width, height);
 
+            // 繪製標籤
+            drawLabel(g);
+
             // 畫邊框
             g.setColor(borderColor);
             g.drawOval(x, y, width, height);
@@ -700,7 +785,7 @@ public class WorkflowEditor extends JFrame {
             endShape.addConnectedLink(this);
         }
         public void updateEndpoints(Shape movedShape, int dx, int dy) {
-            System.out.println("UpdateEndpoints for " + (movedShape == startShape ? "start" : "end") + " shape, dx = " + dx + ", dy = " + dy);
+           // System.out.println("UpdateEndpoints for " + (movedShape == startShape ? "start" : "end") + " shape, dx = " + dx + ", dy = " + dy);
             if (movedShape == startShape) {
                 startPoint.x += dx;
                 startPoint.y += dy;
@@ -935,6 +1020,266 @@ public class WorkflowEditor extends JFrame {
             }
             super.translate(dx, dy); // 同時平移 CompositeShape 的邊界
             updateConnectionPoints();
+        }
+    }
+
+    class Label {
+        private String text;
+        private LabelShape shape;
+        private Color backgroundColor;
+        private int fontSize;
+
+        public Label(String text) {
+            this.text = text;
+            this.shape = new RectangleLabelShape(); // 預設為矩形
+            this.backgroundColor = Color.WHITE;   // 預設為白色
+            this.fontSize = 12;                   // 預設字體大小
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+        }
+
+        public LabelShape getShape() {
+            return shape;
+        }
+
+        public void setShape(LabelShape shape) {
+            this.shape = shape;
+        }
+
+        public Color getBackgroundColor() {
+            return backgroundColor;
+        }
+
+        public void setBackgroundColor(Color backgroundColor) {
+            this.backgroundColor = backgroundColor;
+        }
+
+        public int getFontSize() {
+            return fontSize;
+        }
+
+        public void setFontSize(int fontSize) {
+            this.fontSize = fontSize;
+        }
+
+        public void draw(Graphics2D g, int x, int y, int width, int height) {
+            g.setColor(backgroundColor);
+            shape.draw(g, x, y, width, height);
+
+            g.setColor(Color.BLACK);
+            g.setFont(new Font("Arial", Font.PLAIN, fontSize));
+            FontMetrics fm = g.getFontMetrics();
+            int textWidth = fm.stringWidth(text);
+            int textHeight = fm.getAscent();
+            int textX = x + (width - textWidth) / 2;
+            int textY = y + (height + textHeight) / 2 - fm.getDescent();
+            g.drawString(text, textX, textY);
+        }
+
+        public Rectangle getBounds(Graphics2D g, int x, int y, int width, int height) {
+            Font font = new Font("Arial", Font.PLAIN, fontSize);
+            FontMetrics fm = g.getFontMetrics(font); // 從傳入的 Graphics2D 物件取得 FontMetrics
+            int textWidth = fm.stringWidth(text);
+            int textHeight = fm.getHeight();
+            // 這裡可以根據標籤形狀和文字大小來更精確地計算邊界
+            return shape.getBounds(x, y, Math.max(width, textWidth + 10), Math.max(height, textHeight + 5));
+        }
+    }
+
+    interface LabelShape {
+        void draw(Graphics2D g, int x, int y, int width, int height);
+        Rectangle getBounds(int x, int y, int width, int height);
+    }
+
+    // 矩形標籤形狀
+    class RectangleLabelShape implements LabelShape {
+        @Override
+        public void draw(Graphics2D g, int x, int y, int width, int height) {
+            g.fillRect(x, y, width, height);
+        }
+
+        @Override
+        public Rectangle getBounds(int x, int y, int width, int height) {
+            return new Rectangle(x, y, width, height);
+        }
+    }
+
+    // 橢圓標籤形狀
+    class OvalLabelShape implements LabelShape {
+        @Override
+        public void draw(Graphics2D g, int x, int y, int width, int height) {
+            g.fillOval(x, y, width, height);
+        }
+
+        @Override
+        public Rectangle getBounds(int x, int y, int width, int height) {
+            return new Rectangle(x, y, width, height);
+        }
+    }
+    public class CustomLabelStyleDialog extends JDialog {
+
+        private JTextField labelNameField;
+        private JComboBox<String> labelShapeComboBox;
+        private JComboBox<Color> backgroundColorComboBox;
+        private JComboBox<Integer> fontSizeComboBox;
+        private Shape selectedShape;
+        private Label currentLabel;
+        private boolean isCancelled = true;
+
+        private static final Map<Color, String> colorNameMap = new HashMap<>();
+
+        static {
+            colorNameMap.put(Color.BLACK, "黑色");
+            colorNameMap.put(Color.WHITE, "白色");
+            colorNameMap.put(Color.GRAY, "灰色");
+            colorNameMap.put(Color.YELLOW, "黃色");
+            colorNameMap.put(Color.BLUE, "藍色");
+            colorNameMap.put(Color.LIGHT_GRAY, "淺灰色");
+            colorNameMap.put(Color.DARK_GRAY, "深灰色");
+            colorNameMap.put(Color.RED, "紅色");
+            colorNameMap.put(Color.GREEN, "綠色");
+            colorNameMap.put(Color.CYAN, "青色");
+            // 可以根據需要添加更多顏色
+        }
+
+        public CustomLabelStyleDialog(JFrame parent, Shape shape, Label label) {
+            super(parent, "Custom Label Style", true); // true 表示這是模態對話框
+            this.selectedShape = shape;
+            this.currentLabel = label;
+
+            // 初始化元件
+            labelNameField = new JTextField(label != null ? label.getText() : "");
+            labelShapeComboBox = new JComboBox<>(new String[]{"Rectangle", "Oval"});
+            Color[] availableColors = {Color.WHITE, Color.GRAY, Color.LIGHT_GRAY, Color.DARK_GRAY,Color.YELLOW, Color.RED, Color.GREEN, Color.CYAN};
+            backgroundColorComboBox = new JComboBox<>(availableColors);
+            fontSizeComboBox = new JComboBox<>(new Integer[]{10, 12, 14, 16, 18, 20});
+
+            // 設定預設值
+            if (label != null) {
+                labelShapeComboBox.setSelectedItem(label.getShape().getClass().getSimpleName().replace("LabelShape", ""));
+                backgroundColorComboBox.setSelectedItem(label.getBackgroundColor());
+                fontSizeComboBox.setSelectedItem(label.getFontSize());
+            }
+            // 設定 backgroundColorComboBox 的 Renderer
+            backgroundColorComboBox.setRenderer(new DefaultListCellRenderer() {
+                @Override
+                public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                    JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                    if (value instanceof Color) {
+                        Color color = (Color) value;
+                        label.setText(colorNameMap.getOrDefault(color, getColorHexString(color))); // 顯示顏色名稱或 Hex 字串
+                        label.setIcon(new ColorIcon(color, 16, 16)); // 顯示顏色小圖示
+                    }
+                    return label;
+                }
+            });
+
+            // 建立 UI
+            JPanel mainPanel = new JPanel(new GridLayout(0, 2, 5, 5));
+            mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+            mainPanel.add(new JLabel("Label Name:"));
+            mainPanel.add(labelNameField);
+
+            mainPanel.add(new JLabel("Label Shape:"));
+            mainPanel.add(labelShapeComboBox);
+
+            mainPanel.add(new JLabel("Background Color:"));
+            mainPanel.add(backgroundColorComboBox);
+
+            mainPanel.add(new JLabel("Font Size:"));
+            mainPanel.add(fontSizeComboBox);
+
+            // 建立按鈕
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            JButton okButton = new JButton("OK");
+            JButton cancelButton = new JButton("Cancel");
+
+            okButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    isCancelled = false;
+                    setVisible(false);
+                }
+            });
+
+            cancelButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    setVisible(false);
+                }
+            });
+
+            buttonPanel.add(okButton);
+            buttonPanel.add(cancelButton);
+
+            // 將元件加入對話框
+            add(mainPanel, BorderLayout.CENTER);
+            add(buttonPanel, BorderLayout.SOUTH);
+
+            pack();
+            setLocationRelativeTo(parent);
+        }
+
+        public boolean isCancelled() {
+            return isCancelled;
+        }
+
+        public String getLabelName() {
+            return labelNameField.getText();
+        }
+
+        public String getLabelShape() {
+            return (String) labelShapeComboBox.getSelectedItem();
+        }
+
+        public Color getBackgroundColor() {
+            return (Color) backgroundColorComboBox.getSelectedItem();
+        }
+
+        public int getFontSize() {
+            return (Integer) fontSizeComboBox.getSelectedItem();
+        }
+
+        private String getColorHexString(Color color) {
+            return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+        }
+
+        // 輔助類別：用於繪製顏色小圖示
+        static class ColorIcon implements Icon {
+            private Color color;
+            private int width;
+            private int height;
+
+            public ColorIcon(Color color, int width, int height) {
+                this.color = color;
+                this.width = width;
+                this.height = height;
+            }
+
+            @Override
+            public void paintIcon(Component c, Graphics g, int x, int y) {
+                g.setColor(color);
+                g.fillRect(x, y, width, height);
+                g.setColor(Color.BLACK);
+                g.drawRect(x, y, width - 1, height - 1); // 畫一個小邊框
+            }
+
+            @Override
+            public int getIconWidth() {
+                return width;
+            }
+
+            @Override
+            public int getIconHeight() {
+                return height;
+            }
         }
     }
 
