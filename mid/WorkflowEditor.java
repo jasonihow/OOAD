@@ -12,11 +12,10 @@ import java.awt.geom.Path2D;
 import javax.swing.border.EmptyBorder;
 import java.util.*;
 
-
 public class WorkflowEditor extends JFrame {
     private String mode = "";
     private DrawingCanvas canvas;
-    private RoundedButton selectedButton = null; // 記錄當前選中的按鈕
+    private RoundedButton selectedButton = null;
 
     public WorkflowEditor() {
         setTitle("Workflow Design Editor");
@@ -24,35 +23,33 @@ public class WorkflowEditor extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // 建立菜單欄
         JMenuBar menuBar = new JMenuBar();
 
-        // 建立 "File" 菜單
         JMenu fileMenu = new JMenu("File");
-        // 這裡我們直接添加按鈕，但通常 File 菜單會包含菜單項 (JMenuItem)
+
         JButton fileButton = new JButton("File");
-        fileButton.setFocusPainted(false); // 可選：去除按鈕獲得焦點時的虛線框
+        fileButton.setFocusPainted(false);
         fileButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // 在這裡添加 File 按鈕的邏輯
+
             }
         });
         fileMenu.add(fileButton);
         menuBar.add(fileMenu);
 
-        // 建立 "Edit" 菜單
         JMenu editMenu = new JMenu("Edit");
-        // 同樣，這裡直接添加按鈕
+
         JButton labelButton = new JButton("Label");
-        labelButton.setFocusPainted(false); // 可選
+        labelButton.setFocusPainted(false);
         labelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Shape selectedShape = canvas.getSelectedShape();
                 if (selectedShape != null) {
-                    Label currentLabel = selectedShape.getLabel(); // 假設 Shape 有 getLabel() 方法
-                    CustomLabelStyleDialog dialog = new CustomLabelStyleDialog(WorkflowEditor.this, selectedShape, currentLabel);
+                    Label currentLabel = selectedShape.getLabel();
+                    CustomLabelStyleDialog dialog = new CustomLabelStyleDialog(WorkflowEditor.this, selectedShape,
+                            currentLabel);
                     dialog.setVisible(true);
 
                     if (!dialog.isCancelled()) {
@@ -63,23 +60,24 @@ public class WorkflowEditor extends JFrame {
 
                         Label newLabel = new Label(labelName);
                         if (labelShape.equals("Rectangle")) {
-                            newLabel.setShape(new RectangleLabelShape()); // 假設有 RectangleLabelShape 類別
+                            newLabel.setShape(new RectangleLabelShape());
                         } else if (labelShape.equals("Oval")) {
-                            newLabel.setShape(new OvalLabelShape());     // 假設有 OvalLabelShape 類別
+                            newLabel.setShape(new OvalLabelShape());
                         }
                         newLabel.setBackgroundColor(backgroundColor);
                         newLabel.setFontSize(fontSize);
 
-                        selectedShape.setLabel(newLabel); // 假設 Shape 有 setLabel() 方法
+                        selectedShape.setLabel(newLabel);
                         canvas.repaint();
                     }
                 } else {
-                    JOptionPane.showMessageDialog(WorkflowEditor.this, "請先選擇一個基本物件。", "提示", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(WorkflowEditor.this, "請先選擇一個基本物件。", "提示",
+                            JOptionPane.WARNING_MESSAGE);
                 }
             }
         });
         JButton groupButton = new JButton("Group");
-        groupButton.setFocusPainted(false); // 可選
+        groupButton.setFocusPainted(false);
         groupButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -87,7 +85,7 @@ public class WorkflowEditor extends JFrame {
             }
         });
         JButton unGroupButton = new JButton("UnGroup");
-        unGroupButton.setFocusPainted(false); // 可選
+        unGroupButton.setFocusPainted(false);
         unGroupButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -99,32 +97,27 @@ public class WorkflowEditor extends JFrame {
         editMenu.add(unGroupButton);
         menuBar.add(editMenu);
 
-        // 將菜單欄設置到 JFrame
         setJMenuBar(menuBar);
 
-        // 建立工具列（左側按鈕區）
         JPanel toolbar = new JPanel();
         toolbar.setLayout(new GridLayout(6, 1, 5, 1));
         toolbar.setBackground(new Color(240, 240, 240));
 
         toolbar.setBorder(new EmptyBorder(1, 2, 1, 2));
 
-        // 建立畫布
         canvas = new DrawingCanvas();
 
-        // 按鈕名稱
-        String[] buttonNames = {"Select", "Association", "Generalization", "Composition", "Rect", "Oval"};
+        String[] buttonNames = { "Select", "Association", "Generalization", "Composition", "Rect", "Oval" };
 
         for (String name : buttonNames) {
             RoundedButton button = new RoundedButton(name);
             button.setPreferredSize(new Dimension(100, 40));
 
-            // 設定按鈕點擊事件，切換模式並改變顏色
             button.addActionListener(e -> {
                 mode = name;
                 updateButtonColors(button);
                 if (!mode.equals("Select")) {
-                    canvas.unselectAllShapes(); // 取消所有選取
+                    canvas.unselectAllShapes();
                     repaint();
                 }
             });
@@ -137,16 +130,14 @@ public class WorkflowEditor extends JFrame {
         setVisible(true);
     }
 
-    // 更新按鈕顏色（選中的變黑，其他變回白色）
     private void updateButtonColors(RoundedButton clickedButton) {
         if (selectedButton != null) {
-            selectedButton.setSelected(false); // 取消舊的選中狀態
+            selectedButton.setSelected(false);
         }
         clickedButton.setSelected(true);
-        selectedButton = clickedButton; // 更新選取的按鈕
+        selectedButton = clickedButton;
     }
 
-    // 畫布類別
     public class DrawingCanvas extends JPanel {
         private List<Shape> shapes = new ArrayList<>();
         private Shape startShape = null;
@@ -168,18 +159,18 @@ public class WorkflowEditor extends JFrame {
                 public void mousePressed(MouseEvent e) {
                     if (mode.equals("Select")) {
                         shapeClicked = false;
-                        // 從最上層的物件開始檢查
+
                         for (int i = shapes.size() - 1; i >= 0; i--) {
                             Shape shape = shapes.get(i);
                             if (shape.contains(e.getX(), e.getY())) {
                                 unselectAllShapes();
                                 shape.setSelected(true);
                                 selectedShapeForDrag = shape;
-                                dragOffsetX = e.getX() - shape.x; // 計算點擊位置與形狀左上角的 X 偏移量
+                                dragOffsetX = e.getX() - shape.x;
                                 dragOffsetY = e.getY() - shape.y;
                                 shapeClicked = true;
-                                //System.out.println("depth: " + shape.depth);
-                                break; // 停止檢查其他物件
+                                // System.out.println("depth: " + shape.depth);
+                                break;
                             } else {
                                 shape.setSelected(false);
                             }
@@ -191,26 +182,25 @@ public class WorkflowEditor extends JFrame {
                         }
                         repaint();
                     } else if (mode.matches("Association|Generalization|Composition")) {
-                        // 從最上層的物件開始檢查
                         for (int i = shapes.size() - 1; i >= 0; i--) {
                             Shape shape = shapes.get(i);
                             Point clickedPort = shape.getClosestConnectionPoint(e.getX(), e.getY());
                             if (clickedPort != null) {
                                 startShape = shape;
-                                startPoint = clickedPort; // 記錄起始連接點
+                                startPoint = clickedPort;
                                 startPort = clickedPort;
 
                                 startShape.addConnectedPort(startPort);
                                 isDragging = true;
                                 shape.setDragging(true);
                                 repaint();
-                                return; // 停止檢查其他物件
+                                return;
                             }
                         }
-                        // 清除拖曳起始標記和點擊的連接埠
+
                         for (Shape s : shapes) {
                             s.setDragging(false);
-                           // s.removeAllConnectedPorts();
+                            // s.removeAllConnectedPorts();
                         }
                         startShape = null;
                         startPoint = null;
@@ -219,7 +209,7 @@ public class WorkflowEditor extends JFrame {
                     } else if (mode.matches("Rect|Oval")) {
                         Shape newShape = createShape(mode, e.getX(), e.getY());
                         if (newShape != null) {
-                            newShape.setDepth(shapes.size()); // 設定深度
+                            newShape.setDepth(shapes.size());
                             shapes.add(newShape);
                             repaint();
                         }
@@ -232,7 +222,8 @@ public class WorkflowEditor extends JFrame {
                         dragEndPoint = e.getPoint();
                         repaint();
                     } else if (mode.equals("Select") && shapeClicked) {
-                        selectedShapeForDrag.translate(e.getX() - selectedShapeForDrag.x - dragOffsetX, e.getY() - selectedShapeForDrag.y - dragOffsetY);
+                        selectedShapeForDrag.translate(e.getX() - selectedShapeForDrag.x - dragOffsetX,
+                                e.getY() - selectedShapeForDrag.y - dragOffsetY);
                         repaint();
                     } else if (isDragging) {
                         endPoint = new Point(e.getX(), e.getY());
@@ -260,12 +251,11 @@ public class WorkflowEditor extends JFrame {
                             dragEndPoint = null;
                             repaint();
                         }
-                        selectedShapeForDrag = null; // 釋放選中的形狀
-                    }
-                    else if (isDragging) {
+                        selectedShapeForDrag = null;
+                    } else if (isDragging) {
                         isDragging = false;
                         Point releasedPort = null;
-                        // 從最上層的物件開始檢查
+
                         for (int i = shapes.size() - 1; i >= 0; i--) {
                             Shape shape = shapes.get(i);
                             if (shape.contains(e.getX(), e.getY()) && shape != startShape) {
@@ -273,11 +263,11 @@ public class WorkflowEditor extends JFrame {
                                 if (releasedPort != null) {
                                     Link link = switch (mode) {
                                         case "Association" ->
-                                                new AssociationLink(startShape, startPoint, shape, releasedPort);
+                                            new AssociationLink(startShape, startPoint, shape, releasedPort);
                                         case "Generalization" ->
-                                                new GeneralizationLink(startShape, startPoint, shape, releasedPort);
+                                            new GeneralizationLink(startShape, startPoint, shape, releasedPort);
                                         case "Composition" ->
-                                                new CompositionLink(startShape, startPoint, shape, releasedPort);
+                                            new CompositionLink(startShape, startPoint, shape, releasedPort);
                                         default -> null;
                                     };
                                     links.add(link);
@@ -285,8 +275,7 @@ public class WorkflowEditor extends JFrame {
                                     break;
                                 }
 
-                            }
-                            else {
+                            } else {
                                 shape.deleteConnectedPort(startPort);
                                 shape.setDragging(false);
                                 repaint();
@@ -325,9 +314,7 @@ public class WorkflowEditor extends JFrame {
             return new Rectangle(x, y, width, height);
         }
 
-        // 🔹 工廠方法：根據 mode 建立不同形狀
         private Shape createShape(String mode, int x, int y) {
-
             return switch (mode) {
                 case "Rect" -> new RectangleShape(x, y, 80, 50);
                 case "Oval" -> new OvalShape(x, y, 80, 50);
@@ -352,15 +339,11 @@ public class WorkflowEditor extends JFrame {
             if (selectedShapes.size() >= 2) {
                 CompositeShape composite = new CompositeShape(selectedShapes);
                 composite.setDepth(minDepth);
-                // 移除原先選取的物件
                 shapes.removeAll(selectedShapes);
-                // 確保子物件不再被選取
                 for (Shape shape : selectedShapes) {
                     shape.setSelected(false);
                 }
-                // 加入新的 Composite 物件
                 shapes.add(composite);
-                // 取消所有物件的選取狀態，並選取新的 Composite 物件
                 unselectAllShapes();
                 composite.setSelected(true);
                 repaint();
@@ -380,13 +363,9 @@ public class WorkflowEditor extends JFrame {
 
             if (selectedComposite != null) {
                 CompositeShape composite = (CompositeShape) selectedComposite;
-                // 移除 Composite 物件
                 shapes.remove(selectedComposite);
-                // 將 Composite 物件中的子物件加入到 shapes 列表
                 shapes.addAll(composite.getChildren());
-                // 排序 shapes 列表，根據 depth 從小到大
                 shapes.sort(Comparator.comparingInt(s -> s.depth));
-                // 取消所有物件的選取狀態，並選取剛解散的子物件
                 unselectAllShapes();
                 for (Shape child : composite.getChildren()) {
                     child.setSelected(true);
@@ -416,9 +395,8 @@ public class WorkflowEditor extends JFrame {
                 g2d.setColor(Color.BLACK);
                 g2d.drawLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
             }
-            // 繪製選框
             if (isDraggingSelection && dragStartPoint != null && dragEndPoint != null) {
-                g2d.setColor(new Color(0, 0, 255, 50)); // 半透明藍色
+                g2d.setColor(new Color(0, 0, 255, 50));
                 Rectangle selectionRect = createSelectionRectangle(dragStartPoint, dragEndPoint);
                 g2d.fillRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
                 g2d.setColor(Color.BLUE);
@@ -427,20 +405,19 @@ public class WorkflowEditor extends JFrame {
         }
     }
 
-    // **自訂圓角按鈕**
     static class RoundedButton extends JButton {
         private boolean isSelected = false;
 
         public RoundedButton(String text) {
             super(text);
-            setContentAreaFilled(false); // 讓背景透明，自己畫
+            setContentAreaFilled(false);
             setFocusPainted(false);
             setBorder(new RoundedBorder(15));
         }
 
         public void setSelected(boolean selected) {
             isSelected = selected;
-            repaint(); // 重新繪製按鈕
+            repaint();
         }
 
         @Override
@@ -449,13 +426,13 @@ public class WorkflowEditor extends JFrame {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             if (isSelected) {
-                g2.setColor(Color.BLACK); // 選取時黑色
+                g2.setColor(Color.BLACK);
             } else {
-                g2.setColor(Color.WHITE); // 預設白色
+                g2.setColor(Color.WHITE);
             }
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
 
-            g2.setColor(isSelected ? Color.WHITE : Color.BLACK); // 文字顏色
+            g2.setColor(isSelected ? Color.WHITE : Color.BLACK);
             g2.setFont(getFont());
             FontMetrics fm = g2.getFontMetrics();
             int x = (getWidth() - fm.stringWidth(getText())) / 2;
@@ -466,7 +443,6 @@ public class WorkflowEditor extends JFrame {
         }
     }
 
-    // 自訂圓角邊框類別
     static class RoundedBorder extends AbstractBorder {
         private int radius;
 
@@ -495,10 +471,7 @@ public class WorkflowEditor extends JFrame {
         }
     }
 
-    // 🟢 抽象類別，讓所有形狀都能共用 x, y, width, height
-    // 🟢 抽象類別，加入 fillColor 和 borderColor
     abstract class Shape {
-        // 🟢 所有 Shape 共享這些顏色
         static Color defaultFillColor = Color.LIGHT_GRAY;
         static Color defaultBorderColor = Color.DARK_GRAY;
 
@@ -515,8 +488,8 @@ public class WorkflowEditor extends JFrame {
             this.y = y;
             this.width = width;
             this.height = height;
-            this.fillColor = defaultFillColor;  // 預設填充顏色
-            this.borderColor = defaultBorderColor;  // 預設邊框顏色
+            this.fillColor = defaultFillColor;
+            this.borderColor = defaultBorderColor;
         }
 
         abstract void draw(Graphics2D g);
@@ -539,23 +512,18 @@ public class WorkflowEditor extends JFrame {
                 int textWidth = fm.stringWidth(label.getText());
                 int textHeight = fm.getHeight();
 
-                // 計算標籤的預計寬度和高度 (考慮形狀和文字)
-                int labelWidth = Math.max(textWidth + 10, 30); // 至少 30 寬
-                int labelHeight = Math.max(textHeight + 5, 20); // 至少 20 高
+                int labelWidth = Math.max(textWidth + 10, 30);
+                int labelHeight = Math.max(textHeight + 5, 20);
 
-                // 計算標籤的中心點座標
                 int labelCenterX = shapeBounds.x + shapeBounds.width / 2;
                 int labelCenterY = shapeBounds.y + shapeBounds.height / 2;
 
-                // 計算標籤左上角的 X 和 Y 座標，使其中心點與 Shape 的中心點對齊
                 int labelX = labelCenterX - labelWidth / 2;
                 int labelY = labelCenterY - labelHeight / 2;
 
-                // 繪製標籤背景
                 g.setColor(label.getBackgroundColor());
                 label.getShape().draw(g, labelX, labelY, labelWidth, labelHeight);
 
-                // 繪製標籤文字
                 g.setColor(Color.BLACK);
                 g.setFont(font);
                 int textX = labelX + (labelWidth - textWidth) / 2;
@@ -567,9 +535,9 @@ public class WorkflowEditor extends JFrame {
         protected abstract void updateConnectionPoints();
 
         void drawAllConnectionPoints(Graphics2D g) {
-            g.setColor(Color.BLACK); // 連接點顏色
+            g.setColor(Color.BLACK);
             for (Point point : connectionPoints) {
-                g.fillRect(point.x - 3, point.y - 3, 6, 6); // 繪製連接點
+                g.fillRect(point.x - 3, point.y - 3, 6, 6);
             }
         }
 
@@ -582,7 +550,7 @@ public class WorkflowEditor extends JFrame {
         }
 
         void drawConnectionPoints(Graphics2D g) {
-            g.setColor(Color.BLACK); // 連接點顏色
+            g.setColor(Color.BLACK);
             for (Point port : connectedPorts) {
                 g.fillRect(port.x - 3, port.y - 3, 6, 6);
             }
@@ -605,12 +573,14 @@ public class WorkflowEditor extends JFrame {
         public void setDragging(boolean Dragging) {
             isDragging = Dragging;
         }
+
         public void removeAllConnectedPorts() {
             connectedPorts.clear();
         }
 
         public void translate(int dx, int dy) {
-           // System.out.println("Translate: dx = " + dx + ", dy = " + dy + " for shape at (" + x + ", " + y + ")");
+            // System.out.println("Translate: dx = " + dx + ", dy = " + dy + " for shape at
+            // (" + x + ", " + y + ")");
             this.x += dx;
             this.y += dy;
             updateConnectionPoints();
@@ -633,13 +603,12 @@ public class WorkflowEditor extends JFrame {
                     closest = port;
                 }
             }
-            // 可以設定一個點擊連接點的容忍範圍 (例如半徑 5 個像素)
             if (minDistSq <= 6 * 6) {
                 return closest;
             }
             return null;
         }
-        // 新增方法來管理連接的 Link
+
         private List<Link> connectedLinks = new ArrayList<>();
 
         public void addConnectedLink(Link link) {
@@ -655,20 +624,17 @@ public class WorkflowEditor extends JFrame {
         }
     }
 
-
-    // 🟢 矩形
     class RectangleShape extends Shape {
         public RectangleShape(int x, int y, int width, int height) {
             super(x, y, width, height);
-            // 新增矩形的連接點
-            connectionPoints.add(new Point(x, y + height / 2)); // 左邊中點
-            connectionPoints.add(new Point(x + width / 2, y)); // 上邊中點
-            connectionPoints.add(new Point(x + width, y + height / 2)); // 右邊中點
-            connectionPoints.add(new Point(x + width / 2, y + height)); // 下邊中點
-            connectionPoints.add(new Point(x, y)); // 左上角
-            connectionPoints.add(new Point(x + width, y)); // 右上角
-            connectionPoints.add(new Point(x, y + height)); // 左下角
-            connectionPoints.add(new Point(x + width, y + height)); // 右下角
+            connectionPoints.add(new Point(x, y + height / 2));
+            connectionPoints.add(new Point(x + width / 2, y));
+            connectionPoints.add(new Point(x + width, y + height / 2));
+            connectionPoints.add(new Point(x + width / 2, y + height));
+            connectionPoints.add(new Point(x, y));
+            connectionPoints.add(new Point(x + width, y));
+            connectionPoints.add(new Point(x, y + height));
+            connectionPoints.add(new Point(x + width, y + height));
         }
 
         @Override
@@ -686,19 +652,15 @@ public class WorkflowEditor extends JFrame {
 
         @Override
         void draw(Graphics2D g) {
-            // 填滿矩形
             g.setColor(fillColor);
             g.fillRect(x, y, width, height);
 
-            // 畫邊框
             g.setColor(borderColor);
             g.drawRect(x, y, width, height);
 
-            // 繪製標籤
             drawLabel(g);
 
-            if (isSelected()){
-                // 繪製連接點
+            if (isSelected()) {
                 drawAllConnectionPoints(g);
             } else if (isDragging()) {
                 drawConnectionPoints(g);
@@ -712,20 +674,18 @@ public class WorkflowEditor extends JFrame {
         }
 
         @Override
-         boolean contains(int x, int y) {
+        boolean contains(int x, int y) {
             return x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height;
         }
     }
 
-    // 🟢 橢圓
     class OvalShape extends Shape {
         public OvalShape(int x, int y, int width, int height) {
             super(x, y, width, height);
-            // 新增橢圓的連接點
-            connectionPoints.add(new Point(x, y + height / 2)); // 左邊中點
-            connectionPoints.add(new Point(x + width / 2, y)); // 上邊中點
-            connectionPoints.add(new Point(x + width, y + height / 2)); // 右邊中點
-            connectionPoints.add(new Point(x + width / 2, y + height)); // 下邊中點
+            connectionPoints.add(new Point(x, y + height / 2));
+            connectionPoints.add(new Point(x + width / 2, y));
+            connectionPoints.add(new Point(x + width, y + height / 2));
+            connectionPoints.add(new Point(x + width / 2, y + height));
         }
 
         @Override
@@ -736,21 +696,18 @@ public class WorkflowEditor extends JFrame {
             connectionPoints.add(new Point(x + width, y + height / 2));
             connectionPoints.add(new Point(x + width / 2, y + height));
         }
+
         @Override
         void draw(Graphics2D g) {
-            // 填滿橢圓
             g.setColor(fillColor);
             g.fillOval(x, y, width, height);
 
-            // 繪製標籤
             drawLabel(g);
 
-            // 畫邊框
             g.setColor(borderColor);
             g.drawOval(x, y, width, height);
 
-            if (isSelected()){
-                // 繪製連接點
+            if (isSelected()) {
                 drawAllConnectionPoints(g);
             } else if (isDragging()) {
                 drawConnectionPoints(g);
@@ -764,7 +721,6 @@ public class WorkflowEditor extends JFrame {
 
         @Override
         public boolean contains(int x, int y) {
-            // 使用橢圓方程式進行精確包含檢查
             double centerX = this.x + width / 2.0;
             double centerY = this.y + height / 2.0;
             double normalizedX = (x - centerX) / (width / 2.0);
@@ -772,20 +728,23 @@ public class WorkflowEditor extends JFrame {
             return normalizedX * normalizedX + normalizedY * normalizedY <= 1.0;
         }
     }
+
     abstract class Link {
         Shape startShape, endShape;
         Point startPoint, endPoint;
 
         public Link(Shape startShape, Point startPoint, Shape endShape, Point endPoint) {
             this.startShape = startShape;
-            this.startPoint = new Point(startPoint); // 使用傳入的 Point 創建新的 Point 物件
+            this.startPoint = new Point(startPoint);
             this.endShape = endShape;
-            this.endPoint = new Point(endPoint);   // 使用傳入的 Point 創建新的 Point 物件
+            this.endPoint = new Point(endPoint);
             startShape.addConnectedLink(this);
             endShape.addConnectedLink(this);
         }
+
         public void updateEndpoints(Shape movedShape, int dx, int dy) {
-           // System.out.println("UpdateEndpoints for " + (movedShape == startShape ? "start" : "end") + " shape, dx = " + dx + ", dy = " + dy);
+            // System.out.println("UpdateEndpoints for " + (movedShape == startShape ?
+            // "start" : "end") + " shape, dx = " + dx + ", dy = " + dy);
             if (movedShape == startShape) {
                 startPoint.x += dx;
                 startPoint.y += dy;
@@ -815,20 +774,17 @@ public class WorkflowEditor extends JFrame {
             double arrowSize = 10;
             double angle = Math.atan2(end.y - start.y, end.x - start.x);
 
-            // 計算箭頭兩個端點的角度 (相對於連接線的角度 +/- 45 度)
-            double angle1 = angle - Math.PI / 6; // -45 度
-            double angle2 = angle + Math.PI / 6; // +45 度
+            double angle1 = angle - Math.PI / 6;
+            double angle2 = angle + Math.PI / 6;
 
-            // 計算箭頭兩個端點的座標
             int x1 = (int) (end.x - arrowSize * Math.cos(angle1));
             int y1 = (int) (end.y - arrowSize * Math.sin(angle1));
             int x2 = (int) (end.x - arrowSize * Math.cos(angle2));
             int y2 = (int) (end.y - arrowSize * Math.sin(angle2));
 
             g2d.setColor(Color.BLACK);
-            g2d.setStroke(new BasicStroke(2)); // 設定線條粗細
+            g2d.setStroke(new BasicStroke(2));
 
-            // 繪製兩條箭頭線
             g2d.drawLine(end.x, end.y, x1, y1);
             g2d.drawLine(end.x, end.y, x2, y2);
         }
@@ -860,15 +816,16 @@ public class WorkflowEditor extends JFrame {
             arrowHead.lineTo(-generalizationArrowSize, generalizationArrowSize / 2);
             arrowHead.closePath();
 
-            g2d.setColor(Color.WHITE); // 空心箭頭，所以填充白色
+            g2d.setColor(Color.WHITE);
             g2d.fill(tx.createTransformedShape(arrowHead));
 
-            g2d.setStroke(new BasicStroke(2)); // 設定邊框粗細為 2
-            g2d.setColor(Color.GRAY); // 畫出箭頭的邊框
+            g2d.setStroke(new BasicStroke(2));
+            g2d.setColor(Color.GRAY);
             g2d.draw(tx.createTransformedShape(arrowHead));
 
         }
     }
+
     class CompositionLink extends Link {
         public CompositionLink(Shape startShape, Point startPoint, Shape endShape, Point endPoint) {
             super(startShape, startPoint, endShape, endPoint);
@@ -887,10 +844,9 @@ public class WorkflowEditor extends JFrame {
             double angle = Math.atan2(end.y - start.y, end.x - start.x);
             AffineTransform tx = new AffineTransform();
 
-            // 計算菱形前端應該在的位置
             double deltaX = 2 * diamondSize * Math.cos(angle);
             double deltaY = 2 * diamondSize * Math.sin(angle);
-            tx.translate(end.x - deltaX, end.y - deltaY); // 將變換平移到菱形前端
+            tx.translate(end.x - deltaX, end.y - deltaY);
             tx.rotate(angle - Math.PI);
 
             Path2D diamondHead = new Path2D.Double();
@@ -900,9 +856,9 @@ public class WorkflowEditor extends JFrame {
             diamondHead.lineTo(-diamondSize, diamondSize / 2);
             diamondHead.closePath();
 
-            g2d.setColor(Color.WHITE); // 實心菱形箭頭，填充白色
+            g2d.setColor(Color.WHITE);
             g2d.fill(tx.createTransformedShape(diamondHead));
-            g2d.setStroke(new BasicStroke(2)); // 設定邊框粗細為 2
+            g2d.setStroke(new BasicStroke(2));
             g2d.setColor(Color.GRAY);
             g2d.draw(tx.createTransformedShape(diamondHead));
         }
@@ -912,7 +868,6 @@ public class WorkflowEditor extends JFrame {
         private List<Shape> children = new ArrayList<>();
 
         public CompositeShape(List<Shape> shapes) {
-            // 計算 CompositeShape 的邊界，這裡先設定為 0, 0, 0, 0，稍後會更新
             super(0, 0, 0, 0);
             children.addAll(shapes);
             updateBounds();
@@ -942,14 +897,11 @@ public class WorkflowEditor extends JFrame {
 
         @Override
         void draw(Graphics2D g) {
-            // 對 children 列表根據 depth 進行排序
             List<Shape> sortedChildren = new ArrayList<>(children);
             sortedChildren.sort(Comparator.comparingInt(s -> s.depth));
-            // 繪製排序後的子物件
             for (Shape child : sortedChildren) {
                 child.draw(g);
             }
-            // 如果 CompositeShape 被選中，繪製其邊框
             if (isSelected()) {
                 g.setColor(Color.BLUE);
                 g.setStroke(new BasicStroke(2));
@@ -988,19 +940,19 @@ public class WorkflowEditor extends JFrame {
             this.y = minY;
             this.width = maxX - minX;
             this.height = maxY - minY;
-            updateConnectionPoints(); // 邊界更新後需要更新連接點
+            updateConnectionPoints();
         }
 
         @Override
         protected void updateConnectionPoints() {
             connectionPoints.clear();
-            if (children.isEmpty()) return;
+            if (children.isEmpty())
+                return;
 
-            // 這裡可以定義 CompositeShape 的連接點邏輯，例如取其邊界的中點
-            connectionPoints.add(new Point(x, y + height / 2)); // 左邊中點
-            connectionPoints.add(new Point(x + width / 2, y)); // 上邊中點
-            connectionPoints.add(new Point(x + width, y + height / 2)); // 右邊中點
-            connectionPoints.add(new Point(x + width / 2, y + height)); // 下邊中點
+            connectionPoints.add(new Point(x, y + height / 2));
+            connectionPoints.add(new Point(x + width / 2, y));
+            connectionPoints.add(new Point(x + width, y + height / 2));
+            connectionPoints.add(new Point(x + width / 2, y + height));
         }
 
         @Override
@@ -1010,7 +962,7 @@ public class WorkflowEditor extends JFrame {
                     return true;
                 }
             }
-            return getBounds().contains(px, py); // 也檢查是否包含 CompositeShape 的邊界
+            return getBounds().contains(px, py);
         }
 
         @Override
@@ -1018,7 +970,7 @@ public class WorkflowEditor extends JFrame {
             for (Shape child : children) {
                 child.translate(dx, dy);
             }
-            super.translate(dx, dy); // 同時平移 CompositeShape 的邊界
+            super.translate(dx, dy);
             updateConnectionPoints();
         }
     }
@@ -1031,9 +983,9 @@ public class WorkflowEditor extends JFrame {
 
         public Label(String text) {
             this.text = text;
-            this.shape = new RectangleLabelShape(); // 預設為矩形
-            this.backgroundColor = Color.WHITE;   // 預設為白色
-            this.fontSize = 12;                   // 預設字體大小
+            this.shape = new RectangleLabelShape();
+            this.backgroundColor = Color.WHITE;
+            this.fontSize = 12;
         }
 
         public String getText() {
@@ -1084,20 +1036,19 @@ public class WorkflowEditor extends JFrame {
 
         public Rectangle getBounds(Graphics2D g, int x, int y, int width, int height) {
             Font font = new Font("Arial", Font.PLAIN, fontSize);
-            FontMetrics fm = g.getFontMetrics(font); // 從傳入的 Graphics2D 物件取得 FontMetrics
+            FontMetrics fm = g.getFontMetrics(font);
             int textWidth = fm.stringWidth(text);
             int textHeight = fm.getHeight();
-            // 這裡可以根據標籤形狀和文字大小來更精確地計算邊界
             return shape.getBounds(x, y, Math.max(width, textWidth + 10), Math.max(height, textHeight + 5));
         }
     }
 
     interface LabelShape {
         void draw(Graphics2D g, int x, int y, int width, int height);
+
         Rectangle getBounds(int x, int y, int width, int height);
     }
 
-    // 矩形標籤形狀
     class RectangleLabelShape implements LabelShape {
         @Override
         public void draw(Graphics2D g, int x, int y, int width, int height) {
@@ -1110,7 +1061,6 @@ public class WorkflowEditor extends JFrame {
         }
     }
 
-    // 橢圓標籤形狀
     class OvalLabelShape implements LabelShape {
         @Override
         public void draw(Graphics2D g, int x, int y, int width, int height) {
@@ -1122,6 +1072,7 @@ public class WorkflowEditor extends JFrame {
             return new Rectangle(x, y, width, height);
         }
     }
+
     public class CustomLabelStyleDialog extends JDialog {
 
         private JTextField labelNameField;
@@ -1145,42 +1096,41 @@ public class WorkflowEditor extends JFrame {
             colorNameMap.put(Color.RED, "紅色");
             colorNameMap.put(Color.GREEN, "綠色");
             colorNameMap.put(Color.CYAN, "青色");
-            // 可以根據需要添加更多顏色
         }
 
         public CustomLabelStyleDialog(JFrame parent, Shape shape, Label label) {
-            super(parent, "Custom Label Style", true); // true 表示這是模態對話框
+            super(parent, "Custom Label Style", true);
             this.selectedShape = shape;
             this.currentLabel = label;
 
-            // 初始化元件
             labelNameField = new JTextField(label != null ? label.getText() : "");
-            labelShapeComboBox = new JComboBox<>(new String[]{"Rectangle", "Oval"});
-            Color[] availableColors = {Color.WHITE, Color.GRAY, Color.LIGHT_GRAY, Color.DARK_GRAY,Color.YELLOW, Color.RED, Color.GREEN, Color.CYAN};
+            labelShapeComboBox = new JComboBox<>(new String[] { "Rectangle", "Oval" });
+            Color[] availableColors = { Color.WHITE, Color.GRAY, Color.LIGHT_GRAY, Color.DARK_GRAY, Color.YELLOW,
+                    Color.RED, Color.GREEN, Color.CYAN };
             backgroundColorComboBox = new JComboBox<>(availableColors);
-            fontSizeComboBox = new JComboBox<>(new Integer[]{10, 12, 14, 16, 18, 20});
+            fontSizeComboBox = new JComboBox<>(new Integer[] { 10, 12, 14, 16, 18, 20 });
 
-            // 設定預設值
             if (label != null) {
-                labelShapeComboBox.setSelectedItem(label.getShape().getClass().getSimpleName().replace("LabelShape", ""));
+                labelShapeComboBox
+                        .setSelectedItem(label.getShape().getClass().getSimpleName().replace("LabelShape", ""));
                 backgroundColorComboBox.setSelectedItem(label.getBackgroundColor());
                 fontSizeComboBox.setSelectedItem(label.getFontSize());
             }
-            // 設定 backgroundColorComboBox 的 Renderer
             backgroundColorComboBox.setRenderer(new DefaultListCellRenderer() {
                 @Override
-                public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                    JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                        boolean isSelected, boolean cellHasFocus) {
+                    JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected,
+                            cellHasFocus);
                     if (value instanceof Color) {
                         Color color = (Color) value;
-                        label.setText(colorNameMap.getOrDefault(color, getColorHexString(color))); // 顯示顏色名稱或 Hex 字串
-                        label.setIcon(new ColorIcon(color, 16, 16)); // 顯示顏色小圖示
+                        label.setText(colorNameMap.getOrDefault(color, getColorHexString(color)));
+                        label.setIcon(new ColorIcon(color, 16, 16));
                     }
                     return label;
                 }
             });
 
-            // 建立 UI
             JPanel mainPanel = new JPanel(new GridLayout(0, 2, 5, 5));
             mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -1196,7 +1146,6 @@ public class WorkflowEditor extends JFrame {
             mainPanel.add(new JLabel("Font Size:"));
             mainPanel.add(fontSizeComboBox);
 
-            // 建立按鈕
             JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
             JButton okButton = new JButton("OK");
             JButton cancelButton = new JButton("Cancel");
@@ -1219,7 +1168,6 @@ public class WorkflowEditor extends JFrame {
             buttonPanel.add(okButton);
             buttonPanel.add(cancelButton);
 
-            // 將元件加入對話框
             add(mainPanel, BorderLayout.CENTER);
             add(buttonPanel, BorderLayout.SOUTH);
 
@@ -1251,7 +1199,6 @@ public class WorkflowEditor extends JFrame {
             return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
         }
 
-        // 輔助類別：用於繪製顏色小圖示
         static class ColorIcon implements Icon {
             private Color color;
             private int width;
@@ -1268,7 +1215,7 @@ public class WorkflowEditor extends JFrame {
                 g.setColor(color);
                 g.fillRect(x, y, width, height);
                 g.setColor(Color.BLACK);
-                g.drawRect(x, y, width - 1, height - 1); // 畫一個小邊框
+                g.drawRect(x, y, width - 1, height - 1);
             }
 
             @Override
@@ -1282,7 +1229,6 @@ public class WorkflowEditor extends JFrame {
             }
         }
     }
-
 
     public static void main(String[] args) {
         new WorkflowEditor();
