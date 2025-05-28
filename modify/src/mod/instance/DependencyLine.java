@@ -58,12 +58,17 @@ public class DependencyLine extends JPanel
         java.awt.Stroke oldStroke = g2.getStroke();
         g2.setStroke(dashed);
 
-        g2.setColor(Color.BLACK);
+        if (isSelect) {
+            g2.setColor(Color.BLUE);
+        } else {
+            g2.setColor(Color.BLACK);
+        }
         g2.drawLine(fpPrime.x, fpPrime.y, tpPrime.x, tpPrime.y);
 
         g2.setStroke(oldStroke); // 還原線條樣式
         paintArrow(g, tpPrime);
         if (isSelect == true) {
+            System.out.println("paintSelect");
             paintSelect(g);
         }
     }
@@ -207,5 +212,21 @@ public class DependencyLine extends JPanel
 
     public void setSelect(boolean isSelect) {
         this.isSelect = isSelect;
+    }
+
+    public JPanel getFrom() {
+        return from;
+    }
+
+    public int getFromSide() {
+        return fromSide;
+    }
+
+    public JPanel getTo() {
+        return to;
+    }
+
+    public int getToSide() {
+        return toSide;
     }
 }

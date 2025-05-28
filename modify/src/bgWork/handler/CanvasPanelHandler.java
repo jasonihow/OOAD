@@ -11,6 +11,7 @@ import java.util.Vector;
 import javax.swing.JPanel;
 import javax.swing.border.LineBorder;
 
+import Define.AreaDefine;
 import Listener.CPHActionListener;
 import Pack.DragPack;
 import Pack.SendText;
@@ -109,6 +110,13 @@ public class CanvasPanelHandler extends PanelHandler {
 						((BasicClass) members.elementAt(i)).setSelect(true);
 						selectComp.add(members.elementAt(i));
 						isSelect = true;
+						int highlightedport = new AreaDefine().getArea(
+								members.elementAt(i).getLocation(),
+								members.elementAt(i).getSize(),
+								e.getPoint());
+						highlightLinesForPort(members.elementAt(i), highlightedport);
+						// System.out.println("highlighted port: " + highlightedport);
+
 						break;
 					case 1:
 						((UseCase) members.elementAt(i)).setSelect(true);
@@ -136,6 +144,45 @@ public class CanvasPanelHandler extends PanelHandler {
 			} else {
 				setSelectAllType(members.elementAt(i), false);
 			}
+		}
+		repaintComp();
+	}
+
+	void highlightLinesForPort(JPanel baseObj, int portIndex) {
+		for (int i = 0; i < members.size(); i++) {
+			Object obj = members.elementAt(i);
+			System.out.println(obj.getClass().getName());
+			boolean highlight = false;
+			if (obj instanceof AssociationLine) {
+				AssociationLine line = (AssociationLine) obj;
+				if ((line.getFrom() == baseObj && line.getFromSide() == portIndex) ||
+						(line.getTo() == baseObj && line.getToSide() == portIndex)) {
+					highlight = true;
+				}
+				line.setSelect(highlight);
+			} else if (obj instanceof CompositionLine) {
+				CompositionLine line = (CompositionLine) obj;
+				if ((line.getFrom() == baseObj && line.getFromSide() == portIndex) ||
+						(line.getTo() == baseObj && line.getToSide() == portIndex)) {
+					highlight = true;
+				}
+				line.setSelect(highlight);
+			} else if (obj instanceof GeneralizationLine) {
+				GeneralizationLine line = (GeneralizationLine) obj;
+				if ((line.getFrom() == baseObj && line.getFromSide() == portIndex) ||
+						(line.getTo() == baseObj && line.getToSide() == portIndex)) {
+					highlight = true;
+				}
+				line.setSelect(highlight);
+			} else if (obj instanceof DependencyLine) {
+				DependencyLine line = (DependencyLine) obj;
+				if ((line.getFrom() == baseObj && line.getFromSide() == portIndex) ||
+						(line.getTo() == baseObj && line.getToSide() == portIndex)) {
+					highlight = true;
+				}
+				line.setSelect(highlight);
+			}
+
 		}
 		repaintComp();
 	}
@@ -334,6 +381,7 @@ public class CanvasPanelHandler extends PanelHandler {
 					default:
 						break;
 				}
+				members.insertElementAt(funcObj, 0);
 				contextPanel.add(funcObj, 0);
 				break;
 		}

@@ -45,7 +45,11 @@ public class GeneralizationLine extends JPanel
 				fp.y - this.getLocation().y);
 		tpPrime = new Point(tp.x - this.getLocation().x,
 				tp.y - this.getLocation().y);
-		g.setColor(Color.BLACK);
+		if (isSelect) {
+			g.setColor(Color.BLUE);
+		} else {
+			g.setColor(Color.BLACK);
+		}
 		g.drawLine(fpPrime.x, fpPrime.y, tpPrime.x, tpPrime.y);
 		paintArrow(g, tpPrime);
 		if (isSelect == true) {
@@ -167,5 +171,21 @@ public class GeneralizationLine extends JPanel
 
 	public void setSelect(boolean isSelect) {
 		this.isSelect = isSelect;
+	}
+
+	public JPanel getFrom() {
+		return from;
+	}
+
+	public int getFromSide() {
+		return fromSide;
+	}
+
+	public JPanel getTo() {
+		return to;
+	}
+
+	public int getToSide() {
+		return toSide;
 	}
 }
