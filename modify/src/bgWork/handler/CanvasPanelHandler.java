@@ -122,6 +122,11 @@ public class CanvasPanelHandler extends PanelHandler {
 						((UseCase) members.elementAt(i)).setSelect(true);
 						selectComp.add(members.elementAt(i));
 						isSelect = true;
+						int highlightedport2 = new AreaDefine().getArea(
+								members.elementAt(i).getLocation(),
+								members.elementAt(i).getSize(),
+								e.getPoint());
+						highlightLinesForPort(members.elementAt(i), highlightedport2);
 						break;
 					case 5:
 						Point p = e.getPoint();

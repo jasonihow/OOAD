@@ -47,11 +47,10 @@ public class DependencyLine extends JPanel
                 tp.y - this.getLocation().y);
         g.setColor(Color.BLACK);
 
-        // 使用 Graphics2D 畫虛線
         java.awt.Graphics2D g2 = (java.awt.Graphics2D) g;
         float[] dash = { 8.0f, 8.0f }; // 虛線樣式：8像素線、8像素空白
         java.awt.BasicStroke dashed = new java.awt.BasicStroke(
-                1.0f, // 線寬
+                isSelect ? 2.0f : 1.0f,
                 java.awt.BasicStroke.CAP_BUTT,
                 java.awt.BasicStroke.JOIN_MITER,
                 10.0f, dash, 0.0f);
