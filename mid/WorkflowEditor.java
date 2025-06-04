@@ -261,15 +261,21 @@ public class WorkflowEditor extends JFrame {
                             if (shape.contains(e.getX(), e.getY()) && shape != startShape) {
                                 releasedPort = shape.getClosestConnectionPoint(e.getX(), e.getY());
                                 if (releasedPort != null) {
-                                    Link link = switch (mode) {
-                                        case "Association" ->
-                                            new AssociationLink(startShape, startPoint, shape, releasedPort);
-                                        case "Generalization" ->
-                                            new GeneralizationLink(startShape, startPoint, shape, releasedPort);
-                                        case "Composition" ->
-                                            new CompositionLink(startShape, startPoint, shape, releasedPort);
-                                        default -> null;
-                                    };
+                                    Link link = null;
+                                    switch (mode) {
+                                        case "Association":
+                                            link = new AssociationLink(startShape, startPoint, shape, releasedPort);
+                                            break;
+                                        case "Generalization":
+                                            link = new GeneralizationLink(startShape, startPoint, shape, releasedPort);
+                                            break;
+                                        case "Composition":
+                                            link = new CompositionLink(startShape, startPoint, shape, releasedPort);
+                                            break;
+                                        default:
+                                            link = null;
+                                            break;
+                                    }
                                     links.add(link);
                                     repaint();
                                     break;
@@ -315,11 +321,14 @@ public class WorkflowEditor extends JFrame {
         }
 
         private Shape createShape(String mode, int x, int y) {
-            return switch (mode) {
-                case "Rect" -> new RectangleShape(x, y, 80, 50);
-                case "Oval" -> new OvalShape(x, y, 80, 50);
-                default -> null;
-            };
+            switch (mode) {
+                case "Rect":
+                    return new RectangleShape(x, y, 80, 50);
+                case "Oval":
+                    return new OvalShape(x, y, 80, 50);
+                default:
+                    return null;
+            }
         }
 
         public void groupSelectedShapes() {
@@ -471,9 +480,9 @@ public class WorkflowEditor extends JFrame {
         }
     }
 
-    abstract class Shape {
-        static Color defaultFillColor = Color.LIGHT_GRAY;
-        static Color defaultBorderColor = Color.DARK_GRAY;
+    public abstract class Shape {
+        Color defaultFillColor = Color.LIGHT_GRAY;
+        Color defaultBorderColor = Color.DARK_GRAY;
 
         int x, y, width, height, depth;
         private Label label;
@@ -1073,7 +1082,7 @@ public class WorkflowEditor extends JFrame {
         }
     }
 
-    public class CustomLabelStyleDialog extends JDialog {
+    public static class CustomLabelStyleDialog extends JDialog {
 
         private JTextField labelNameField;
         private JComboBox<String> labelShapeComboBox;
