@@ -59,12 +59,4 @@ class Label {
         int textY = y + (height + textHeight) / 2 - fm.getDescent();
         g.drawString(text, textX, textY);
     }
-
-    public Rectangle getBounds(Graphics2D g, int x, int y, int width, int height) {
-        Font font = new Font("Arial", Font.PLAIN, fontSize);
-        FontMetrics fm = g.getFontMetrics(font);
-        int textWidth = fm.stringWidth(text);
-        int textHeight = fm.getHeight();
-        return shape.getBounds(x, y, Math.max(width, textWidth + 10), Math.max(height, textHeight + 5));
-    }
 }

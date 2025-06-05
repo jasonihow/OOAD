@@ -25,6 +25,12 @@ public abstract class Shape {
 
     abstract void draw(Graphics2D g);
 
+    abstract void group(Shape shape);
+
+    abstract void ungroup(Shape shape);
+
+    abstract List<Shape> getChildren();
+
     abstract Rectangle getBounds();
 
     public Label getLabel() {
@@ -64,13 +70,6 @@ public abstract class Shape {
     }
 
     protected abstract void updateConnectionPoints();
-
-    void drawAllConnectionPoints(Graphics2D g) {
-        g.setColor(Color.BLACK);
-        for (Point point : connectionPoints) {
-            g.fillRect(point.x - 3, point.y - 3, 6, 6);
-        }
-    }
 
     public void addConnectedPort(Point port) {
         connectedPorts.add(port);

@@ -15,8 +15,6 @@ abstract class Link {
     }
 
     public void updateEndpoints(Shape movedShape, int dx, int dy) {
-        // System.out.println("UpdateEndpoints for " + (movedShape == startShape ?
-        // "start" : "end") + " shape, dx = " + dx + ", dy = " + dy);
         if (movedShape == startShape) {
             startPoint.x += dx;
             startPoint.y += dy;

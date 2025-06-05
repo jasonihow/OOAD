@@ -11,13 +11,15 @@ public class CompositeShape extends Shape {
         updateBounds();
     }
 
-    public void add(Shape shape) {
+    @Override
+    public void group(Shape shape) {
         children.add(shape);
         updateBounds();
         updateConnectionPoints();
     }
 
-    public void remove(Shape shape) {
+    @Override
+    public void ungroup(Shape shape) {
         children.remove(shape);
         updateBounds();
         updateConnectionPoints();

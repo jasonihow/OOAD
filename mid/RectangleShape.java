@@ -1,4 +1,6 @@
 import java.awt.*;
+import java.util.Collections;
+import java.util.List;
 
 class RectangleShape extends Shape {
     public RectangleShape(int x, int y, int width, int height) {
@@ -37,11 +39,24 @@ class RectangleShape extends Shape {
         drawLabel(g);
 
         if (isSelected()) {
-            drawAllConnectionPoints(g);
-        } else if (isDragging()) {
             drawConnectionPoints(g);
         }
 
+    }
+
+    @Override
+    void group(Shape shape) {
+        // No specific grouping logic for OvalShape
+    }
+
+    @Override
+    void ungroup(Shape shape) {
+        // No specific ungrouping logic for OvalShape
+    }
+
+    @Override
+    List<Shape> getChildren() {
+        return Collections.emptyList(); // RectangleShape does not have children
     }
 
     @Override

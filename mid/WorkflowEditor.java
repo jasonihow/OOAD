@@ -59,14 +59,7 @@ public class WorkflowEditor extends JFrame {
                         Color backgroundColor = dialog.getBackgroundColor();
                         int fontSize = dialog.getFontSize();
 
-                        Label newLabel = new Label(labelName);
-                        if (labelShape.equals("Rectangle")) {
-                            newLabel.setShape(new RectangleLabelShape());
-                        } else if (labelShape.equals("Oval")) {
-                            newLabel.setShape(new OvalLabelShape());
-                        }
-                        newLabel.setBackgroundColor(backgroundColor);
-                        newLabel.setFontSize(fontSize);
+                        Label newLabel = LabelShapeFactory.create(labelName, labelShape, backgroundColor, fontSize);
 
                         selectedShape.setLabel(newLabel);
                         canvas.repaint();
@@ -372,12 +365,11 @@ public class WorkflowEditor extends JFrame {
             }
 
             if (selectedComposite != null) {
-                CompositeShape composite = (CompositeShape) selectedComposite;
                 shapes.remove(selectedComposite);
-                shapes.addAll(composite.getChildren());
+                shapes.addAll(selectedComposite.getChildren());
                 shapes.sort(Comparator.comparingInt(s -> s.depth));
                 unselectAllShapes();
-                for (Shape child : composite.getChildren()) {
+                for (Shape child : selectedComposite.getChildren()) {
                     child.setSelected(true);
                 }
                 repaint();
