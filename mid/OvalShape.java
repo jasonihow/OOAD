@@ -31,6 +31,8 @@ class OvalShape extends Shape {
         g.drawOval(x, y, width, height);
 
         if (isSelected()) {
+            drawAllConnectionPoints(g);
+        } else if (isDragging()) {
             drawConnectionPoints(g);
         }
     }

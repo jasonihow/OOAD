@@ -86,6 +86,13 @@ public abstract class Shape {
         }
     }
 
+    void drawAllConnectionPoints(Graphics2D g) {
+        g.setColor(Color.BLACK);
+        for (Point point : connectionPoints) {
+            g.fillRect(point.x - 3, point.y - 3, 6, 6);
+        }
+    }
+
     abstract boolean contains(int x, int y);
 
     public boolean isSelected() {

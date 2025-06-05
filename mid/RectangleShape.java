@@ -39,6 +39,8 @@ class RectangleShape extends Shape {
         drawLabel(g);
 
         if (isSelected()) {
+            drawAllConnectionPoints(g);
+        } else if (isDragging()) {
             drawConnectionPoints(g);
         }
 
