@@ -32,8 +32,10 @@ class OvalShape extends Shape {
 
         if (isSelected()) {
             drawAllConnectionPoints(g);
+            System.out.println("isSelected: ");
         } else if (isDragging()) {
             drawConnectionPoints(g);
+            System.out.println("isDragging: ");
         }
     }
 

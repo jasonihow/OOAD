@@ -62,10 +62,9 @@ public abstract class Shape {
             label.getShape().draw(g, labelX, labelY, labelWidth, labelHeight);
 
             g.setColor(Color.BLACK);
-            g.setFont(font);
             int textX = labelX + (labelWidth - textWidth) / 2;
             int textY = labelY + (labelHeight + fm.getAscent()) / 2 - fm.getDescent();
-            g.drawString(label.getText(), textX, textY);
+            label.drawText(g, textX, textY);
         }
     }
 

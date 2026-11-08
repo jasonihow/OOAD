@@ -1,10 +1,14 @@
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.awt.geom.AffineTransform;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,6 +41,9 @@ public class WorkflowEditor extends JFrame {
             }
         });
         fileMenu.add(fileButton);
+        JMenuItem exportPdfItem = new JMenuItem("Export as PDF");
+        exportPdfItem.addActionListener(e -> exportCanvasToPdf());
+        fileMenu.add(exportPdfItem);
         menuBar.add(fileMenu);
 
         JMenu editMenu = new JMenu("Edit");
@@ -59,7 +66,8 @@ public class WorkflowEditor extends JFrame {
                         Color backgroundColor = dialog.getBackgroundColor();
                         int fontSize = dialog.getFontSize();
 
-                        Label newLabel = LabelShapeFactory.create(labelName, labelShape, backgroundColor, fontSize);
+                        Label newLabel = LabelShapeFactory.create(labelName, labelShape, backgroundColor, fontSize,
+                                dialog.isUnderlined());
 
                         selectedShape.setLabel(newLabel);
                         canvas.repaint();
@@ -86,22 +94,27 @@ public class WorkflowEditor extends JFrame {
                 canvas.unGroupSelectedShape();
             }
         });
+        JButton deleteButton = new JButton("Delete");
+        deleteButton.setFocusPainted(false);
+        deleteButton.addActionListener(e -> canvas.deleteSelectedShapes());
         editMenu.add(labelButton);
         editMenu.add(groupButton);
         editMenu.add(unGroupButton);
+        editMenu.add(deleteButton);
         menuBar.add(editMenu);
 
         setJMenuBar(menuBar);
 
         JPanel toolbar = new JPanel();
-        toolbar.setLayout(new GridLayout(6, 1, 5, 1));
+        toolbar.setLayout(new GridLayout(9, 1, 5, 1));
         toolbar.setBackground(new Color(240, 240, 240));
 
         toolbar.setBorder(new EmptyBorder(1, 2, 1, 2));
 
         canvas = new DrawingCanvas();
 
-        String[] buttonNames = { "Select", "Association", "Generalization", "Composition", "Rect", "Oval" };
+        String[] buttonNames = { "Select", "Association", "Generalization", "Composition", "Line", "Rect", "Oval",
+                "Diamond", "Triangle" };
 
         for (String name : buttonNames) {
             RoundedButton button = new RoundedButton(name);
@@ -122,6 +135,31 @@ public class WorkflowEditor extends JFrame {
         add(toolbar, BorderLayout.WEST);
         add(canvas, BorderLayout.CENTER);
         setVisible(true);
+    }
+
+    private void exportCanvasToPdf() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("匯出 PDF");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("PDF files (*.pdf)", "pdf"));
+        fileChooser.setSelectedFile(new File("workflow.pdf"));
+
+        if (fileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File outputFile = fileChooser.getSelectedFile();
+        if (!outputFile.getName().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
+            outputFile = new File(outputFile.getParentFile(), outputFile.getName() + ".pdf");
+        }
+
+        try {
+            canvas.exportToPdf(outputFile);
+            JOptionPane.showMessageDialog(this, "PDF 已匯出至：" + outputFile.getAbsolutePath(), "匯出完成",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException | IllegalStateException ex) {
+            JOptionPane.showMessageDialog(this, "PDF 匯出失敗：" + ex.getMessage(), "匯出失敗",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void updateButtonColors(RoundedButton clickedButton) {
@@ -153,29 +191,44 @@ public class WorkflowEditor extends JFrame {
                 public void mousePressed(MouseEvent e) {
                     if (mode.equals("Select")) {
                         shapeClicked = false;
+                        selectedShapeForDrag = null;
+                        unselectAllShapes();
+                        links.forEach(link -> link.setSelected(false));
 
                         for (int i = shapes.size() - 1; i >= 0; i--) {
                             Shape shape = shapes.get(i);
                             if (shape.contains(e.getX(), e.getY())) {
-                                unselectAllShapes();
                                 shape.setSelected(true);
                                 selectedShapeForDrag = shape;
                                 dragOffsetX = e.getX() - shape.x;
                                 dragOffsetY = e.getY() - shape.y;
                                 shapeClicked = true;
-                                // System.out.println("depth: " + shape.depth);
                                 break;
-                            } else {
-                                shape.setSelected(false);
                             }
                         }
+
+                        boolean linkClicked = false;
                         if (!shapeClicked) {
-                            unselectAllShapes();
+                            for (int i = links.size() - 1; i >= 0; i--) {
+                                Link link = links.get(i);
+                                if (link.contains(e.getX(), e.getY())) {
+                                    link.setSelected(true);
+                                    linkClicked = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!shapeClicked && !linkClicked) {
                             dragStartPoint = e.getPoint();
                             isDraggingSelection = true;
+                        } else {
+                            isDraggingSelection = false;
+                            dragStartPoint = null;
+                            dragEndPoint = null;
                         }
                         repaint();
-                    } else if (mode.matches("Association|Generalization|Composition")) {
+                    } else if (mode.matches("Association|Generalization|Composition|Line")) {
                         for (int i = shapes.size() - 1; i >= 0; i--) {
                             Shape shape = shapes.get(i);
                             Point clickedPort = shape.getClosestConnectionPoint(e.getX(), e.getY());
@@ -200,7 +253,7 @@ public class WorkflowEditor extends JFrame {
                         startPoint = null;
                         startPort = null;
 
-                    } else if (mode.matches("Rect|Oval")) {
+                    } else if (mode.matches("Rect|Oval|Diamond|Triangle")) {
                         Shape newShape = createShape(mode, e.getX(), e.getY());
                         if (newShape != null) {
                             newShape.setDepth(shapes.size());
@@ -266,6 +319,9 @@ public class WorkflowEditor extends JFrame {
                                         case "Composition":
                                             link = new CompositionLink(startShape, startPoint, shape, releasedPort);
                                             break;
+                                        case "Line":
+                                            link = new LineLink(startShape, startPoint, shape, releasedPort);
+                                            break;
                                         default:
                                             link = null;
                                             break;
@@ -306,6 +362,51 @@ public class WorkflowEditor extends JFrame {
             }
         }
 
+        public void deleteSelectedShapes() {
+            Set<Shape> shapesToDelete = Collections.newSetFromMap(new IdentityHashMap<>());
+            for (Shape shape : shapes) {
+                if (shape.isSelected()) {
+                    collectShapeAndChildren(shape, shapesToDelete);
+                }
+            }
+
+            boolean deleted = false;
+            Iterator<Link> linkIterator = links.iterator();
+            while (linkIterator.hasNext()) {
+                Link link = linkIterator.next();
+                if (link.isSelected() || shapesToDelete.contains(link.startShape)
+                        || shapesToDelete.contains(link.endShape)) {
+                    link.startShape.removeConnectedLink(link);
+                    link.endShape.removeConnectedLink(link);
+                    link.startShape.deleteConnectedPort(link.startPoint);
+                    link.endShape.deleteConnectedPort(link.endPoint);
+                    linkIterator.remove();
+                    deleted = true;
+                }
+            }
+
+            for (Shape shape : shapesToDelete) {
+                shape.removeAllConnectedPorts();
+                shape.setDragging(false);
+            }
+            deleted |= shapes.removeIf(Shape::isSelected);
+            if (!deleted) {
+                return;
+            }
+            selectedShapeForDrag = null;
+            shapeClicked = false;
+            repaint();
+        }
+
+        private void collectShapeAndChildren(Shape shape, Set<Shape> collectedShapes) {
+            if (!collectedShapes.add(shape)) {
+                return;
+            }
+            for (Shape child : shape.getChildren()) {
+                collectShapeAndChildren(child, collectedShapes);
+            }
+        }
+
         private Rectangle createSelectionRectangle(Point p1, Point p2) {
             int x = Math.min(p1.x, p2.x);
             int y = Math.min(p1.y, p2.y);
@@ -314,12 +415,31 @@ public class WorkflowEditor extends JFrame {
             return new Rectangle(x, y, width, height);
         }
 
+        public void exportToPdf(File outputFile) throws IOException {
+            if (getWidth() <= 0 || getHeight() <= 0) {
+                throw new IllegalStateException("畫布目前沒有可匯出的內容。");
+            }
+
+            BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+            Graphics2D graphics = image.createGraphics();
+            try {
+                paint(graphics);
+            } finally {
+                graphics.dispose();
+            }
+            PdfExporter.export(image, outputFile);
+        }
+
         private Shape createShape(String mode, int x, int y) {
             switch (mode) {
                 case "Rect":
                     return new RectangleShape(x, y, 80, 50);
                 case "Oval":
                     return new OvalShape(x, y, 80, 50);
+                case "Diamond":
+                    return new DiamondShape(x, y, 80, 50);
+                case "Triangle":
+                    return new TriangleShape(x, y, 80, 50);
                 default:
                     return null;
             }
@@ -479,6 +599,7 @@ public class WorkflowEditor extends JFrame {
         private JComboBox<String> labelShapeComboBox;
         private JComboBox<Color> backgroundColorComboBox;
         private JComboBox<Integer> fontSizeComboBox;
+        private JCheckBox underlineCheckBox;
         private Shape selectedShape;
         private Label currentLabel;
         private boolean isCancelled = true;
@@ -509,12 +630,14 @@ public class WorkflowEditor extends JFrame {
                     Color.RED, Color.GREEN, Color.CYAN };
             backgroundColorComboBox = new JComboBox<>(availableColors);
             fontSizeComboBox = new JComboBox<>(new Integer[] { 10, 12, 14, 16, 18, 20 });
+            underlineCheckBox = new JCheckBox();
 
             if (label != null) {
                 labelShapeComboBox
                         .setSelectedItem(label.getShape().getClass().getSimpleName().replace("LabelShape", ""));
                 backgroundColorComboBox.setSelectedItem(label.getBackgroundColor());
                 fontSizeComboBox.setSelectedItem(label.getFontSize());
+                underlineCheckBox.setSelected(label.isUnderlined());
             }
             backgroundColorComboBox.setRenderer(new DefaultListCellRenderer() {
                 @Override
@@ -545,6 +668,9 @@ public class WorkflowEditor extends JFrame {
 
             mainPanel.add(new JLabel("Font Size:"));
             mainPanel.add(fontSizeComboBox);
+
+            mainPanel.add(new JLabel("Underline:"));
+            mainPanel.add(underlineCheckBox);
 
             JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
             JButton okButton = new JButton("OK");
@@ -593,6 +719,10 @@ public class WorkflowEditor extends JFrame {
 
         public int getFontSize() {
             return (Integer) fontSizeComboBox.getSelectedItem();
+        }
+
+        public boolean isUnderlined() {
+            return underlineCheckBox.isSelected();
         }
 
         private String getColorHexString(Color color) {

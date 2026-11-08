@@ -10,6 +10,7 @@ class CompositionLink extends Link {
 
     @Override
     public void draw(Graphics2D g) {
+        drawSelection(g);
         g.setColor(Color.BLACK);
         g.setStroke(new BasicStroke(2));
         g.drawLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
